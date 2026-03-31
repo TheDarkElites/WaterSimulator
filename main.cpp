@@ -1,4 +1,5 @@
 #include <iostream>
+#include <random>
 #include <GL/glut.h>
 
 using std::cout;
@@ -31,9 +32,25 @@ int main(int argc, char** argv) {
         cout << "Usage: " << argv[0] << " [cellsX] [cellsY] [initial-steup-file]" << endl;
     }
 
+    // We represent each cell with a char
+    // 0 - for air, 1 - for water, we can add aditional substances/materials later
+    char* grid = new char[gridX*gridY];
+
     if (randomInit) {
         cout << "Randomly initializing " << gridX << " by " << gridY << " grid" << endl;
-        cout << "Operation currently not supported!" << endl;
+        std::random_device rd; // seed
+        std::mt19937 gen(rd()); // Mersenne Twister engine
+        std::uniform_int_distribution<> dist(0, 1); // range [0, 1]
+
+        for (int i = 0; i < gridX*gridY; ++i) grid[i] = dist(gen);
+
+        // this code will crash for grid size < 10
+        // remove it after we get the display going
+        cout << "Generated Grid" << endl;
+        for (int i = 0; i < 10; ++i) {
+            for (int j = 0; j < 10; ++j) cout << (int) grid[i*gridX + j] << " ";
+            cout << endl;
+        }
         exit(EXIT_SUCCESS);
     }
     else {
