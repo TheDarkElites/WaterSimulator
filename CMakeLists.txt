@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
+find_package(GLEW REQUIRED)
 
-add_executable(WaterSimulator main.cpp)
+add_executable(WaterSimulator main.cpp util/ogldev_util.cpp)
 set_target_properties(WaterSimulator PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(WaterSimulator PRIVATE OpenGL::GL OpenGL::GLU GLUT::GLUT)
+target_link_libraries(WaterSimulator PRIVATE OpenGL::GL OpenGL::GLU GLUT::GLUT GLEW::GLEW)
