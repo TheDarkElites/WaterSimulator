@@ -1,0 +1,9 @@
+# Water Simulator
+GPU Enabled water particle physics simulator, mimicking volumetric (for now 2D :( ) fluid dynamics scenarios.
+# Setup
+## Ubuntu / Debian
+Figure out how to get CMake Version >= 4.1. The `apt` version is too outdated. I got mine bundled with CLion.
+Install OpenGL and supporting packages
+```bash
+sudo apt install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev
+```
