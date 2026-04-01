@@ -1,21 +1,54 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <GLFW/glfw3.h>
 #include "util/ogldev_util.h"
 
-static int WIDTH = 1920;
-static int HEIGHT = 1080;
+static int WIDTH = 3840;
+static int HEIGHT = 2160;
 
-const char* pVSFileName = "../shader/shaderpixel.vs";
-const char* pFSFileName = "../shader/shaderpixel.fs";
+// Initialize indices so they start correctly
+int WindowID, writeIndex = 0, readIndex = 1;
+float MouseX, MouseY;
+bool MouseDown;
 
-GLuint VBO;
+const char* pVSFileName = "../shader/shaderpixel.vsh";
+const char* pFSFileName = "../shader/shaderpixel.fsh";
+
+GLuint fbo[2], tex[2];
+GLuint VBO; // Added missing VBO declaration
 
 static void RenderSceneCB()
 {
+
+    // 2. Bind the FBO we want to DRAW TO
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo[writeIndex]);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // 3. Bind the texture we want to READ FROM (the previous frame)
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex[readIndex]);
+
+    // Pass input to shader and previous buffer
+    GLint currentProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+
+    int mouseLoc = glGetUniformLocation(currentProgram, "mousePos");
+    int resLoc = glGetUniformLocation(currentProgram, "resolution");
+    int mouseStateLoc = glGetUniformLocation(currentProgram, "mouseDown");
+    int prevBufferLoc = glGetUniformLocation(currentProgram, "prevBuffer");
+
+    glUniform2f(mouseLoc, MouseX, MouseY);
+    glUniform1i(mouseStateLoc, MouseDown);
+    glUniform1i(prevBufferLoc, 0);
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    int fbWidth = viewport[2];  // Width is the 3rd element
+    int fbHeight = viewport[3]; // Height is the 4th element
+
+    // Now pass these to your shader
+    glUniform2f(resLoc, (float)fbWidth, (float)fbHeight);
 
     // Position Attribute (Location 0)
     glEnableVertexAttribArray(0);
@@ -28,8 +61,37 @@ static void RenderSceneCB()
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+
+    // 4. Blit (copy) the FBO we just wrote to over to the default screen buffer
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo[writeIndex]);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    //Swap
+    readIndex = writeIndex;
+    writeIndex = 1 - writeIndex;
 
     glutSwapBuffers();
+}
+
+static void SetupPingPong() {
+    for (int i = 0; i < 2; i++) {
+        glGenFramebuffers(1, &fbo[i]);
+        glGenTextures(1, &tex[i]);
+
+        glBindTexture(GL_TEXTURE_2D, tex[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        // Set wrapping to CLAMP_TO_EDGE so particles don't wrap around
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Added wrap safety
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[i], 0);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // Unbind
 }
 
 static void CreateVertexBuffer() {
@@ -126,17 +188,32 @@ static void CompileShaders() {
     glUseProgram(ShaderProgram);
 }
 
+void mouseEventHandler(int button, int state, int x, int y) {
+    MouseX = (float)x;
+    // GLUT (0,0) is top-left, OpenGL is bottom-left. Flip.
+    MouseY = (float)(HEIGHT - y);
+    MouseDown = (state == GLUT_DOWN);
+}
+
+// Added motion handler so you can drag to draw
+void mouseMotionHandler(int x, int y) {
+    MouseX = (float)x;
+    MouseY = (float)(HEIGHT - y);
+}
+
 int main(int argc, char** argv) {
 
-    //Init
+    // Init
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(WIDTH, HEIGHT);
     glutInitWindowPosition(0, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    //Window
-    int windID = glutCreateWindow("WaterSimulator");
+    // Window
+    WindowID = glutCreateWindow("WaterSimulator");
+
+    // Moved glClearColor here (must occur AFTER window/context creation)
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     GLenum res = glewInit();
     if (res != GLEW_OK) {
@@ -145,10 +222,13 @@ int main(int argc, char** argv) {
     }
 
     CreateVertexBuffer();
-
+    SetupPingPong(); // Function was missing from main!
     CompileShaders();
 
     glutDisplayFunc(RenderSceneCB);
+    glutIdleFunc(RenderSceneCB); // Constantly simulate physics
+    glutMouseFunc(mouseEventHandler);
+    glutMotionFunc(mouseMotionHandler); // Bind drag handler
 
     glutMainLoop();
 
