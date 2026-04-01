@@ -6,8 +6,8 @@
 static int WIDTH = 1920;
 static int HEIGHT = 1080;
 
-const char* pVSFileName = "../shader/shader.vs";
-const char* pFSFileName = "../shader/shader.fs";
+const char* pVSFileName = "../shader/shaderpixel.vs";
+const char* pFSFileName = "../shader/shaderpixel.fs";
 
 GLuint VBO;
 
