@@ -10,6 +10,7 @@ uniform bool mouseDown;
 vec3 emptyColor = vec3(0.0, 0.0, 0.0);
 vec3 waterColor = vec3(0.0, 0.0, 0.8);
 vec3 solidColor = vec3(1.0);
+vec2 pixelSize = 1.0 / resolution;
 
 bool isWater(vec4 color) {
     return all(equal(color.rgb, waterColor));
@@ -28,8 +29,12 @@ bool isSupport(vec4 color) {
     return isWater(color) || isSolid(color);
 }
 
+vec4 getColor(int x, int y)
+{
+    return texture(prevBuffer, TexCoord + vec2(x * pixelSize.x, y * pixelSize.y));
+}
+
 void main() {
-    vec2 pixelSize = 1.0 / resolution;
     vec4 current = texture(prevBuffer, TexCoord);
     vec2 mouseLoc = mousePos / resolution;
 
@@ -39,16 +44,6 @@ void main() {
     bool atRight  = (TexCoord.x > 1.0 - pixelSize.x);
 
     if(atBottom || atLeft || atRight) {FragColor = vec4(solidColor, 1.0); return;}
-
-    // Sampling
-    vec4 above  = texture(prevBuffer, TexCoord + vec2(0.0, pixelSize.y));
-    vec4 below  = texture(prevBuffer, TexCoord + vec2(0.0, -pixelSize.y));
-    vec4 left   = texture(prevBuffer, TexCoord + vec2(-pixelSize.x, 0.0));
-    vec4 right  = texture(prevBuffer, TexCoord + vec2(pixelSize.x, 0.0));
-
-    vec4 bRight = texture(prevBuffer, TexCoord + vec2(pixelSize.x, -pixelSize.y));
-    vec4 bLeft  = texture(prevBuffer, TexCoord + vec2(-pixelSize.x, -pixelSize.y));
-    vec4 left2  = texture(prevBuffer, TexCoord + vec2(2.0 * -pixelSize.x, 0.0));
 
     // Brush Logic
     float aspect = resolution.x / resolution.y;
@@ -60,10 +55,9 @@ void main() {
     }
 
     if (isEmpty(current)) {
-        bool fromAbove = isWater(above);
-        // FIX: Water can move sideways if the pixel below is Water OR Solid ground
-        bool fromRight = isWater(right) && isSupport(bRight);
-        bool fromLeft  = isWater(left) && isSupport(bLeft) && isSupport(left2);
+        bool fromAbove = isWater(getColor(0,1));
+        bool fromRight = isWater(getColor(1,0)) && isSupport(getColor(1,-1));
+        bool fromLeft  = isWater(getColor(-1,0)) && isSupport(getColor(-1,-1)) && isSupport(getColor(-2,0));
 
         if (fromAbove || fromRight || fromLeft) {
             FragColor = vec4(waterColor, 1.0);
@@ -72,13 +66,9 @@ void main() {
     }
 
     if (isWater(current)) {
-        // Fall down if space below is empty
-        bool canFall = !isSupport(below);
-
-        // Move sideways only if we aren't falling and a side is empty
-        bool canMoveSide = !canFall && (!isSupport(left) || !isSupport(right));
-
-        if (canFall || canMoveSide) {
+        bool canMoveLeft = !isWater(getColor(-1,1)) && !isSupport(getColor(-1,0));
+        bool canMoveRight = !isWater(getColor(1,1)) && (!isWater(getColor(2,0)) || !isSupport(getColor(2,-1))) && !isSupport(getColor(1,0));
+        if (!isSupport(getColor(0,-1)) || canMoveLeft || canMoveRight) {
             FragColor = vec4(emptyColor, 1.0);
             return;
         }
@@ -86,3 +76,10 @@ void main() {
 
     FragColor = current;
 }
+
+//Flow Order
+//1. Top
+//2. Top getColor(1,0)
+//3. Top getColor(-1,0)
+//4. getColor(1,0)
+//5. getColor(-1,0)

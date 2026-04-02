@@ -222,11 +222,11 @@ int main(int argc, char** argv) {
     }
 
     CreateVertexBuffer();
-    SetupPingPong(); // Function was missing from main!
+    SetupPingPong();
     CompileShaders();
 
     glutDisplayFunc(RenderSceneCB);
-    glutIdleFunc(RenderSceneCB); // Constantly simulate physics
+    glutIdleFunc(RenderSceneCB);
     glutMouseFunc(mouseEventHandler);
     glutMotionFunc(mouseMotionHandler); // Bind drag handler
 
