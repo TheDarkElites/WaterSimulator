@@ -8,6 +8,6 @@ find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
 
 add_executable(WaterSimulator main.cpp util/ogldev_util.cpp
-        include/particle.h)
+        include/particle.hpp)
 set_target_properties(WaterSimulator PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(WaterSimulator PRIVATE OpenGL::GL OpenGL::GLU GLUT::GLUT GLEW::GLEW)
