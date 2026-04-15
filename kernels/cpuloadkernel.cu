@@ -1,5 +1,6 @@
 #include "cpuloadkernel.h"
 #include <cmath>
+#include <cstdio>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
@@ -20,7 +21,7 @@ __global__ void generatePixels(uchar4* d_ptr, int width, int height, particle* p
     d_ptr[static_cast<int>(roundf(ourparticle.pos.x)) + static_cast<int>(roundf(ourparticle.pos.y)) * width] = make_uchar4(r, g, b, 255);
 }
 
-void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float time) {
+void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float deltaTime) {
     dim3 blockSize(16, 16);
     dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
 
@@ -31,7 +32,6 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float tim
     cudaMemcpy(d_particles, h_particles, sizeof(particle) * width * height, cudaMemcpyHostToDevice);
 
     generatePixels<<<gridSize, blockSize>>>(d_ptr, width, height, d_particles);
-
     cudaFree(d_particles);
 }
 
