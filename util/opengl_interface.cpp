@@ -37,7 +37,7 @@ void opengl_interface::initWindow(int &argc, char **argv) {
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
 
-    //Prevents blurring and keeps your upscaled pixels looking like sharp 2D squares.
+    //Prevents blurring
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, SIM_WIDTH, SIM_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
