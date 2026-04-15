@@ -1,5 +1,4 @@
 #include "opengl_interface.h"
-#include "../kernels/generickernel.h"
 #include <iostream>
 
 // Static member initialization
@@ -8,6 +7,7 @@ GLuint opengl_interface::pboID = 0;
 GLuint opengl_interface::textureID = 0;
 float opengl_interface::currentTime = 0.0f;
 cudaGraphicsResource_t opengl_interface::cudaResource;
+void (*opengl_interface::kernel)(uchar4*, int, int, float) = 0;
 
 void opengl_interface::initWindow(int &argc, char **argv) {
     //Init GLUT
@@ -59,7 +59,7 @@ void opengl_interface::render() {
     cudaGraphicsResourceGetMappedPointer((void**)&d_ptr, &num_bytes, cudaResource);
 
     // Launch Kernel
-    launchGeneratePixels(d_ptr, SIM_WIDTH, SIM_HEIGHT, currentTime);
+    kernel(d_ptr, SIM_WIDTH, SIM_HEIGHT, currentTime);
 
     cudaGraphicsUnmapResources(1, &cudaResource, nullptr);
 

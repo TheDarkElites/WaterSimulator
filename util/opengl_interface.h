@@ -22,6 +22,7 @@ public:
     static float currentTime;
 
     static void initWindow(int &argc, char **argv);
+    static void (*kernel)(uchar4*, int, int, float);
 private:
     static cudaGraphicsResource_t cudaResource;
     static void render();
