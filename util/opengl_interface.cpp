@@ -49,8 +49,6 @@ void opengl_interface::initWindow(int &argc, char **argv) {
 }
 
 void opengl_interface::render() {
-    currentTime += 0.016f; // Rough simulation time increment
-
     // --- CUDA PART ---
     uchar4* d_ptr;
     size_t num_bytes;

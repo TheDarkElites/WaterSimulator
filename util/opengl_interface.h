@@ -9,8 +9,6 @@
 #define WINDOW_WIDTH 3840
 #define WINDOW_HEIGHT 2160
 
-// This is your "chunky pixel" resolution.
-// A 480x270 simulation scaled up to 1920x1080 will make each CUDA pixel a 4x4 block on screen.
 #define SIM_WIDTH 480
 #define SIM_HEIGHT 270
 

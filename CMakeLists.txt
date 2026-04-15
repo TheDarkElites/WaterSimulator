@@ -17,8 +17,10 @@ add_executable(WaterSimulator main.cpp util/ogldev_util.cpp
         include/particle.hpp
         util/opengl_interface.cpp
         util/opengl_interface.h
-        kernels/generickernel.h
-        kernels/generickernel.cu)
+        kernels/testkernel.h
+        kernels/testkernel.cu
+        kernels/cpuloadkernel.cu
+        kernels/cpuloadkernel.h)
 
 target_include_directories(WaterSimulator PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 

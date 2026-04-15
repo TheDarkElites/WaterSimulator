@@ -1,7 +1,6 @@
-#include "generickernel.h"
+#include "testkernel.h"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
-#include <math.h>
 
 __global__ void generatePixels(uchar4* d_ptr, int width, int height, float time) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
