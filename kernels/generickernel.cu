@@ -19,11 +19,9 @@ __global__ void generatePixels(uchar4* d_ptr, int width, int height, float time)
     d_ptr[index] = make_uchar4(r, g, b, a);
 }
 
-// 2. The standard C++ wrapper function that OpenGL can call
 void launchGeneratePixels(uchar4* d_ptr, int width, int height, float time) {
     dim3 blockSize(16, 16);
     dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
 
-    // Launch the kernel
     generatePixels<<<gridSize, blockSize>>>(d_ptr, width, height, time);
 }
