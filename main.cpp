@@ -1,27 +1,24 @@
 #include <iostream>
-#include <GL/glut.h>
-
-static int WIDTH = 1920;
-static int HEIGHT = 1080;
-
-static void RenderSceneCB() {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glutSwapBuffers();
-}
+#include "util/opengl_interface.h"
+#include "kernels/cpuloadkernel.h"
 
 int main(int argc, char** argv) {
 
-    //Init
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    glutInitWindowSize(WIDTH, HEIGHT);
-    glutInitWindowPosition(0, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    opengl_interface::initWindow(argc, argv);
+    opengl_interface::kernel = launchGeneratePixelsCPULOAD;
 
-    //Window
-    int windID = glutCreateWindow("WaterSimulator");
+    //init table of particles for constant image
+    h_particles = static_cast<particle*>(malloc(sizeof(particle) * SIM_WIDTH * SIM_HEIGHT));
 
-    glutDisplayFunc(RenderSceneCB);
+    for (int x = 0; x < SIM_WIDTH; x++) {
+        for (int y = 0; y < SIM_HEIGHT; y++) {
+            h_particles[x + (y * SIM_WIDTH)] = particle(x % 2 == 0 ? PTYPE_WATER : PTYPE_ROCK, 0, vector(x, y));
+        }
+    }
+
+    //UPDATING PARTICLES SHOULD BE DONE IN kernels/cpuloadkernel.cu IN THE HOST FUNCTION - G.O
+
+    //loop
 
     glutMainLoop();
 
