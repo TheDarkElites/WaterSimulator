@@ -1,13 +1,15 @@
 #include "opengl_interface.h"
+
+#include <chrono>
 #include <iostream>
 
 // Static member initialization
 int opengl_interface::windID = 0;
 GLuint opengl_interface::pboID = 0;
 GLuint opengl_interface::textureID = 0;
-float opengl_interface::currentTime = 0.0f;
+std::chrono::time_point<std::chrono::system_clock> opengl_interface::prevTime;
 cudaGraphicsResource_t opengl_interface::cudaResource;
-void (*opengl_interface::kernel)(uchar4*, int, int, float) = 0;
+void (*opengl_interface::kernel)(uchar4*, int, int, float) = nullptr;
 
 void opengl_interface::initWindow(int &argc, char **argv) {
     //Init GLUT
@@ -49,6 +51,10 @@ void opengl_interface::initWindow(int &argc, char **argv) {
 }
 
 void opengl_interface::render() {
+    //deltatime
+    std::chrono::nanoseconds deltaTime = std::chrono::high_resolution_clock::now() - prevTime;
+    prevTime = std::chrono::high_resolution_clock::now();
+
     // --- CUDA PART ---
     uchar4* d_ptr;
     size_t num_bytes;
@@ -57,7 +63,7 @@ void opengl_interface::render() {
     cudaGraphicsResourceGetMappedPointer((void**)&d_ptr, &num_bytes, cudaResource);
 
     // Launch Kernel
-    kernel(d_ptr, SIM_WIDTH, SIM_HEIGHT, currentTime);
+    kernel(d_ptr, SIM_WIDTH, SIM_HEIGHT, std::chrono::duration_cast<std::chrono::duration<float>>(deltaTime).count());
 
     cudaGraphicsUnmapResources(1, &cudaResource, nullptr);
 

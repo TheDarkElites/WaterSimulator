@@ -1,6 +1,7 @@
 #ifndef WATERSIMULATOR_OPENGL_INTERFACE_H
 #define WATERSIMULATOR_OPENGL_INTERFACE_H
 
+#include <chrono>
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <cuda_runtime.h>
@@ -17,7 +18,7 @@ public:
     static int windID;
     static GLuint pboID;
     static GLuint textureID;
-    static float currentTime;
+    static std::chrono::time_point<std::chrono::system_clock> prevTime;
 
     static void initWindow(int &argc, char **argv);
     static void (*kernel)(uchar4*, int, int, float);
