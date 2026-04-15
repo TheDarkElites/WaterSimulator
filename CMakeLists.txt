@@ -16,9 +16,13 @@ check_language(CUDA)
 add_executable(WaterSimulator main.cpp util/ogldev_util.cpp
         include/particle.hpp
         util/opengl_interface.cpp
-        util/opengl_interface.h)
+        util/opengl_interface.h
+        kernels/generickernel.h
+        kernels/generickernel.cu)
 
 target_include_directories(WaterSimulator PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 
 set_target_properties(WaterSimulator PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(WaterSimulator PRIVATE OpenGL::GL OpenGL::GLU GLUT::GLUT GLEW::GLEW CUDA::cudart)
+
+set_target_properties(WaterSimulator PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
