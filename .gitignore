@@ -84,3 +84,10 @@ http-client.private.env.json
 
 # Github Copilot persisted session migrations, see: https://github.com/microsoft/copilot-intellij-feedback/issues/712#issuecomment-3322062215
 .idea/**/copilot.data.migration.*.xml
+/.idea/.gitignore
+/.idea/editor.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/include/nanoflann.hpp
+/.idea/vcs.xml
+/.idea/WaterSimulator.iml
