@@ -68,9 +68,18 @@ class RNG {
     }
 }
 
-vector compute_force_r(particle& i, particle& j, float theta) {
-  /* TODO */
-  return vector(0.0, 0.0, 0.0);
+float weight_r(float r) {
+  int rc = 10; // cutoff radius 10m (could change)
+  return 1- (r/rc);
+}
+
+vector compute_force_r(particle& i, particle& j, float theta, float dt) {
+  float sigma = std::sqrt(2*4.5); // hard code for water sqrt(2*gamma)
+  vector r_ij = j.pos - i.pos;
+  float r = std::sqrt(r_ij * r_ij); // yes we don't have a norm function :(
+  float w_R = weight_r(r);
+  vector r_hat = (1/r) * r_ij; // same as unit vec e
+  return sigma * w_R * (theta/std::sqrt(dt)) * r_hat;
 }
 
 /* Net DPD Force */
