@@ -1,6 +1,9 @@
 /* This file will contain code for various implementations related to the DPD particle simulation */
 #include <"include/particle.hpp">
 #include <cmath>
+#include <random>
+#include <algorithm>
+#include <vector>
 
 /* Conservative Force */
 float weight_c(float r) {
@@ -34,7 +37,38 @@ vector compute_force_d(particle& i, particle& j) {
 }
 
 /* Random Force */
-vector compute_force_r(particle& i, particle& j) {
+class RNG {
+  private:
+    std::mt19937 rng{12345};  
+    std::normal_distribution<float> normal{0.0, 1.0};  // mean=0, std=1
+    std::vector<float> thetas;
+
+  public:
+    RNG(int width, int height) { // random number engine (use default seed)
+      size_t N = static_cast<size_t>(width) * height;
+      thetas.resize(N*(N-1)/2);
+    }
+
+    RNG(int width, int height, int seed): RNG(width, height) { // random number engine (seeded)
+      rng = std::mt19937(seed);
+    }
+
+    void generate_thetas() {
+      for (size_t i = 0; i < thetas.size(); ++i)
+        thetas[i] = normal(rng);
+    }
+
+    float get_theta(int i, int j) {
+      if (i == j) return 0.0; // this shouldn't even happen
+      if (i < j) std::swap(i, j);
+      // assume i > j
+      // then row i starts at (i-1)th triangular number
+      size_t base = (i-1)*i/2;
+      return thetas[base+j];
+    }
+}
+
+vector compute_force_r(particle& i, particle& j, float theta) {
   /* TODO */
   return vector(0.0, 0.0, 0.0);
 }
