@@ -1,4 +1,6 @@
 #include "cpuloadkernel.h"
+
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cuda_runtime.h>
@@ -32,7 +34,7 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
         if (p.type == PTYPE_WATER) {
-            p.vel = vector(0, -0.5, 0);
+            p.vel = vector(0, -5, 0);
         }
     }
 
@@ -40,13 +42,13 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     bool printed = false;
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
-        p.vel = p.vel + p.acc /** deltaTime*/;
-        p.pos = p.pos + p.vel /** deltaTime*/;
+        p.vel = p.vel + p.acc * deltaTime;
+        p.pos = p.pos + p.vel * deltaTime;
 
-        if (p.type == PTYPE_WATER && !printed) {
-            printf("(%f, %f) | %f | %f | Deltatime: %f \n",p.pos.x, p.pos.y, p.vel.y, p.acc.y, deltaTime);
-            printed = true;
-        }
+        // if (p.type == PTYPE_WATER && !printed) {
+        //     printf("(%f, %f) | %f | %f | Deltatime: %f \n",p.pos.x, p.pos.y, p.vel.y, p.acc.y, deltaTime);
+        //     printed = true;
+        // }
     }
 
     cudaError_t err;
