@@ -11,8 +11,8 @@ int main(int argc, char** argv) {
     h_particles = static_cast<particle*>(malloc(sizeof(particle) * SIM_WIDTH * SIM_HEIGHT));
 
     for (int x = 0; x < SIM_WIDTH; x++) {
-        for (int y = 100; y < SIM_HEIGHT; y++) {
-            h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_WATER, 0, vector(x, y));
+        for (int y = 0; y < SIM_HEIGHT; y++) {
+            h_particles[x + (y * SIM_WIDTH)] = particle(x % 2 == 0 ? PTYPE_WATER : PTYPE_ROCK, 0, vector(x, y));
         }
     }
 

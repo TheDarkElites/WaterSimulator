@@ -88,5 +88,6 @@ http-client.private.env.json
 /.idea/editor.xml
 /.idea/misc.xml
 /.idea/modules.xml
+/include/nanoflann.hpp
 /.idea/vcs.xml
 /.idea/WaterSimulator.iml
