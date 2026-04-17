@@ -1,6 +1,7 @@
 #include <iostream>
 #include "util/opengl_interface.h"
 #include "kernels/cpuloadkernel.h"
+#include <cmath>
 
 int main(int argc, char** argv) {
 
@@ -11,7 +12,7 @@ int main(int argc, char** argv) {
     h_particles = static_cast<particle*>(malloc(sizeof(particle) * SIM_WIDTH * SIM_HEIGHT));
 
     for (int x = 0; x < SIM_WIDTH; x++) {
-        for (int y = 100; y < SIM_HEIGHT; y++) {
+        for (int y = 200; y < SIM_HEIGHT; y++) {
             h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_WATER, 0, vector(x, y));
         }
     }

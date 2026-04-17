@@ -1,5 +1,4 @@
 #include "cpuloadkernel.h"
-
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -34,7 +33,7 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
         if (p.type == PTYPE_WATER) {
-            p.vel = vector(0, -5, 0);
+
         }
     }
 
