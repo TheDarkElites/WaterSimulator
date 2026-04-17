@@ -1,6 +1,7 @@
 #include <iostream>
 #include "util/opengl_interface.h"
 #include "kernels/cpuloadkernel.h"
+#include "include/nanoflann.hpp"
 
 int main(int argc, char** argv) {
 
