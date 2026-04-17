@@ -52,7 +52,6 @@ inline vector operator*(const vector& v, const float c) {
 }
 
 enum particle_type {
-    PTYPE_AIR, /* vacuum particle */
     PTYPE_WATER, /* fluid particle */
     PTYPE_ROCK /* solid particle */
 };
