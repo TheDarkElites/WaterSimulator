@@ -48,9 +48,6 @@ void opengl_interface::initWindow(int &argc, char **argv) {
     //callbacks
     glutDisplayFunc(render);
     glutIdleFunc(render);
-
-    //WARNING, WE NOW EXPECT INIT WINDOW TO BE CALLED SHORTLY BEFORE BEGINING GLUT LOOP, OTHERWISE WE HAVE ISSUES AS DELTA TIME IS SPIKED HIGH INITIALLY.
-    prevTime = std::chrono::high_resolution_clock::now();
 }
 
 void opengl_interface::render() {
