@@ -10,8 +10,8 @@
 #define WINDOW_WIDTH 3840
 #define WINDOW_HEIGHT 2160
 
-#define SIM_WIDTH 240
-#define SIM_HEIGHT 135
+#define SIM_WIDTH 480
+#define SIM_HEIGHT 270
 
 class opengl_interface {
 public:
