@@ -7,6 +7,7 @@
 
 #include <cuda_runtime.h>
 #include "../include/particle.hpp"
+#include "../include/dpd.h"
 
 void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float time);
 

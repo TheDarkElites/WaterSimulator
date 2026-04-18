@@ -1,7 +1,6 @@
 #ifndef WATERSIMULATOR_PARTICLE_H
 #define WATERSIMULATOR_PARTICLE_H
-
-#endif //WATERSIMULATOR_PARTICLE_H
+#include <cmath>
 
 struct vector {
     float x; /* vector i-hat component */
@@ -74,3 +73,9 @@ struct particle {
     particle(const particle_type type_, const float mass_, const float x, const float y, const float z) :
         type(type_), mass(mass_), pos(x, y, z), vel(), acc() {}
 };
+
+inline float vecnorm(vector& a) {
+    return std::sqrt(a*a);
+}
+
+#endif //WATERSIMULATOR_PARTICLE_H

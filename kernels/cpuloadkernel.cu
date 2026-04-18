@@ -1,9 +1,14 @@
 #include "cpuloadkernel.h"
+#include "../include/dpd.h"
 #include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+
+#include "../util/opengl_interface.h"
+
+static RNG rng = RNG(SIM_WIDTH, SIM_HEIGHT);
 
 __global__ void generatePixels(uchar4* d_ptr, int width, int height, particle* particles) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -29,25 +34,49 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
 
     //Realistically you will want any operations that change the particles array to occur here (or be called from here) - G.O
+    // generate thetas
+    rng.generate_thetas();
     //compute forces
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
         if (p.type == PTYPE_WATER) {
-
+            for (int j = 0; j < width * height; ++j) {
+                vector r = p.pos - h_particles[j].pos;
+                if (vecnorm(r) < RC) {
+                    vector Force = compute_net_force(p, h_particles[j], rng.get_theta(i, j), deltaTime);
+                    p.acc = Force * (1/p.mass);
+                }
+            }
         }
     }
 
     // update positions
-    bool printed = false;
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
+
+        if (p.pos.x < 0) {
+            p.pos.x = 0;
+            p.vel.x *= -1;
+            p.acc.x = 0;
+        }
+        if (p.pos.x > SIM_WIDTH - 1) {
+            p.pos.x = SIM_WIDTH - 1;
+            p.vel.x *= -1;
+            p.acc.x = 0;
+        }
+        if (p.pos.y < 0) {
+            p.pos.y = 0;
+            p.vel.y *= -1;
+            p.acc.y = 0;
+        }
+        if (p.pos.y > SIM_HEIGHT - 1) {
+            p.pos.y = SIM_HEIGHT - 1;
+            p.vel.y *= -1;
+            p.acc.y = 0;
+        }
+
         p.vel = p.vel + p.acc * deltaTime;
         p.pos = p.pos + p.vel * deltaTime;
-
-        // if (p.type == PTYPE_WATER && !printed) {
-        //     printf("(%f, %f) | %f | %f | Deltatime: %f \n",p.pos.x, p.pos.y, p.vel.y, p.acc.y, deltaTime);
-        //     printed = true;
-        // }
     }
 
     cudaError_t err;
@@ -67,5 +96,7 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
 
     err = cudaFree(d_particles);
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+
+    printf("FPS: %f\n", 1 / deltaTime);
 }
 

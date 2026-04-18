@@ -1,14 +1,10 @@
 /* This file will contain code for various implementations related to the DPD particle simulation */
-#include <"include/particle.hpp">
 #include <cmath>
-#include <random>
-#include <algorithm>
-#include <vector>
+#include "include/dpd.h"
 
 /* Conservative Force */
 float weight_c(float r) {
-  int rc = 10; // cutoff radius 10m (could change)
-  return 1- (r/rc);
+  return 1- (r/RC);
 }
 
 vector compute_force_c(particle& i, particle& j) {
@@ -22,8 +18,7 @@ vector compute_force_c(particle& i, particle& j) {
 
 /* Dissipative Force */
 float weight_d(float r) {
-  int rc = 10; // cutoff radius 10m (could change)
-  return (1- (r/rc)) * (1- (r/rc));
+  return (1- (r/RC)) * (1- (r/RC));
 }
 
 vector compute_force_d(particle& i, particle& j) {
@@ -37,40 +32,28 @@ vector compute_force_d(particle& i, particle& j) {
 }
 
 /* Random Force */
-class RNG {
-  private:
-    std::mt19937 rng{12345};  
-    std::normal_distribution<float> normal{0.0, 1.0};  // mean=0, std=1
-    std::vector<float> thetas;
-
-  public:
-    RNG(int width, int height) { // random number engine (use default seed)
-      size_t N = static_cast<size_t>(width) * height;
-      thetas.resize(N*(N-1)/2);
-    }
-
-    RNG(int width, int height, int seed): RNG(width, height) { // random number engine (seeded)
-      rng = std::mt19937(seed);
-    }
-
-    void generate_thetas() {
-      for (size_t i = 0; i < thetas.size(); ++i)
-        thetas[i] = normal(rng);
-    }
-
-    float get_theta(int i, int j) {
-      if (i == j) return 0.0; // this shouldn't even happen
-      if (i < j) std::swap(i, j);
-      // assume i > j
-      // then row i starts at (i-1)th triangular number
-      size_t base = (i-1)*i/2;
-      return thetas[base+j];
-    }
+RNG::RNG(int width, int height) { // random number engine (use default seed)
+  size_t N = static_cast<size_t>(width) * height;
+  thetas.resize(N*(N-1)/2);
 }
 
+void RNG::generate_thetas() {
+  for (size_t i = 0; i < thetas.size(); ++i)
+    thetas[i] = normal(rng);
+}
+
+float RNG::get_theta(int i, int j) {
+  if (i == j) return 0.0; // this shouldn't even happen
+  if (i < j) std::swap(i, j);
+  // assume i > j
+  // then row i starts at (i-1)th triangular number
+  size_t base = (i-1)*i/2;
+  return thetas[base+j];
+}
+
+
 float weight_r(float r) {
-  int rc = 10; // cutoff radius 10m (could change)
-  return 1- (r/rc);
+  return 1- (r/RC);
 }
 
 vector compute_force_r(particle& i, particle& j, float theta, float dt) {
@@ -83,8 +66,8 @@ vector compute_force_r(particle& i, particle& j, float theta, float dt) {
 }
 
 /* Net DPD Force */
-vector compute_net_force(particle& i, particle& j) {
+vector compute_net_force(particle& i, particle& j, float theta, float dt) {
   return compute_force_c(i, j)
        + compute_force_d(i, j)
-       + compute_force_r(i, j);
+       + compute_force_r(i, j, theta, dt);
 }

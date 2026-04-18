@@ -11,8 +11,10 @@ int main(int argc, char** argv) {
     h_particles = static_cast<particle*>(malloc(sizeof(particle) * SIM_WIDTH * SIM_HEIGHT));
 
     for (int x = 0; x < SIM_WIDTH; x++) {
-        for (int y = 200; y < SIM_HEIGHT; y++) {
-            h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_WATER, 0, vector(x, y));
+        for (int y = 0; y < SIM_HEIGHT; y++) {
+            if (std::rand() % 2 == 0) {
+                h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_WATER, 1, vector(x, y));
+            }
         }
     }
 
