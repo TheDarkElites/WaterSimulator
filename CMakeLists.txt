@@ -24,6 +24,7 @@ add_executable(WaterSimulator main.cpp util/ogldev_util.cpp
         physics.cpp
         dpd.cpp
         include/dpd.h
+        include/physics.h
 )
 
 target_include_directories(WaterSimulator PRIVATE ${CUDAToolkit_INCLUDE_DIRS})

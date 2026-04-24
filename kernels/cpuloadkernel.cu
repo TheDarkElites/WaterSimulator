@@ -1,5 +1,6 @@
 #include "cpuloadkernel.h"
 #include "../include/dpd.h"
+#include "../include/physics.h"
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -40,13 +41,19 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
         if (p.type == PTYPE_WATER) {
+            vector Force = vector();
             for (int j = 0; j < width * height; ++j) {
                 vector r = p.pos - h_particles[j].pos;
                 if (vecnorm(r) < RC) {
-                    vector Force = compute_net_force(p, h_particles[j], rng.get_theta(i, j), deltaTime);
-                    p.acc = Force * (1/p.mass);
+                    if (h_particles[j].type == PTYPE_WATER) {
+                        Force = Force + compute_net_force(p, h_particles[j], rng.get_theta(i, j), deltaTime);
+                    }
+                }
+                if (h_particles[j].type == PTYPE_ROCK) {
+                    //Force = Force + gravityForce(p, h_particles[j], -5);
                 }
             }
+            p.acc = Force * (1/p.mass);
         }
     }
 
@@ -54,29 +61,59 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
 
-        if (p.pos.x < 0) {
-            p.pos.x = 0;
-            p.vel.x *= -1;
-            p.acc.x = 0;
-        }
-        if (p.pos.x > SIM_WIDTH - 1) {
-            p.pos.x = SIM_WIDTH - 1;
-            p.vel.x *= -1;
-            p.acc.x = 0;
-        }
-        if (p.pos.y < 0) {
-            p.pos.y = 0;
-            p.vel.y *= -1;
-            p.acc.y = 0;
-        }
-        if (p.pos.y > SIM_HEIGHT - 1) {
-            p.pos.y = SIM_HEIGHT - 1;
-            p.vel.y *= -1;
-            p.acc.y = 0;
-        }
+        // if (p.pos.x < 0) {
+        //     p.pos.x = SIM_WIDTH/2;
+        //     p.vel.x = 0;
+        //     p.acc.x = 0;
+        // }
+        // if (p.pos.x > SIM_WIDTH - 1) {
+        //     p.pos.x = SIM_WIDTH/2;
+        //     p.vel.x = 0;
+        //     p.acc.x = 0;
+        // }
+        // if (p.pos.y < 0) {
+        //     p.pos.y = SIM_HEIGHT/2;
+        //     p.vel.y = 0;
+        //     p.acc.y = 0;
+        // }
+        // if (p.pos.y > SIM_HEIGHT - 1) {
+        //     p.pos.y = SIM_HEIGHT/2;
+        //     p.vel.y = 0;
+        //     p.acc.y = 0;
+        // }
 
         p.vel = p.vel + p.acc * deltaTime;
-        p.pos = p.pos + p.vel * deltaTime;
+
+        bool inBounds = (p.pos.x >= 0 && p.pos.x < width) && (p.pos.y >= 0 && p.pos.y < height);
+        vector nextPos = p.pos + p.vel * deltaTime;
+        // clamp the x
+        if (nextPos.x < 0) {
+            float clampedX = 0 + (0 - nextPos.x);
+            nextPos.x = clampedX;
+            p.vel.x *= -1; // flip the velocity
+        }
+        else if (nextPos.x >= width) {
+            float clampedX = width - (nextPos.x - width);
+            nextPos.x = clampedX;
+            p.vel.x *= -1; // flip the velocity
+        }
+        // clamp the y
+        if (nextPos.y < 0) {
+            float clampedY = 0 + (0 - nextPos.y);
+            nextPos.y = clampedY;
+            p.vel.y *= -1; // flip the velocity
+        }
+        else if (nextPos.y >= height) {
+            float clampedY = width - (nextPos.y - width);
+            nextPos.y = clampedY;
+            p.vel.y *= -1; // flip the velocity
+        }
+
+        p.pos = nextPos;
+
+        bool tunneled = inBounds && !(p.pos.x >= 0 && p.pos.x < width && (p.pos.y >= 0 && p.pos.y < height));
+
+        if (tunneled) printf("Tunneled\n");
     }
 
     cudaError_t err;
@@ -97,6 +134,6 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     err = cudaFree(d_particles);
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
 
-    printf("FPS: %f\n", 1 / deltaTime);
+    printf("FPS: %f\n", 1 / (deltaTime * SIMFACTOR) );
 }
 

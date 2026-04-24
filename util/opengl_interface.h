@@ -13,6 +13,8 @@
 #define SIM_WIDTH 480 / 6
 #define SIM_HEIGHT 270 / 6
 
+#define SIMFACTOR 1
+
 class opengl_interface {
 public:
     static int windID;

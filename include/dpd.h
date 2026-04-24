@@ -8,8 +8,9 @@
 #include <random>
 #include <algorithm>
 #include <vector>
+#define RC 4
 
-#define RC 2
+constexpr float epsilon = std::numeric_limits<float>::min();
 
 /* Conservative Force */
 vector compute_force_c(particle& i, particle& j);

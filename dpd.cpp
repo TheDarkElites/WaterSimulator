@@ -11,6 +11,7 @@ vector compute_force_c(particle& i, particle& j) {
   int a = 25; // hard coded for water
   vector r_ij = j.pos - i.pos;
   float r = std::sqrt(r_ij * r_ij); // yes we don't have a norm function :(
+  if (r < epsilon) {return {};}
   float w_C = weight_c(r);
   vector r_hat = (1/r) * r_ij; // same as unit vec e
   return a * w_C * r_hat;
@@ -26,6 +27,7 @@ vector compute_force_d(particle& i, particle& j) {
   vector r_ij = j.pos - i.pos;
   vector v_ij = j.vel - i.vel;
   float r = std::sqrt(r_ij * r_ij);
+  if (r < epsilon) {return {};}
   float w_D = weight_d(r);
   vector r_hat = (1/r) * r_ij; // same as unit vec e
   return -gamma * w_D * (v_ij * r_hat) * r_hat;
@@ -60,6 +62,7 @@ vector compute_force_r(particle& i, particle& j, float theta, float dt) {
   float sigma = std::sqrt(2*4.5); // hard code for water sqrt(2*gamma)
   vector r_ij = j.pos - i.pos;
   float r = std::sqrt(r_ij * r_ij); // yes we don't have a norm function :(
+  if (r < epsilon) {return {};}
   float w_R = weight_r(r);
   vector r_hat = (1/r) * r_ij; // same as unit vec e
   return sigma * w_R * (theta/std::sqrt(dt)) * r_hat;

@@ -48,14 +48,14 @@ void opengl_interface::initWindow(int &argc, char **argv) {
     //callbacks
     glutDisplayFunc(render);
     glutIdleFunc(render);
-
-    //WARNING, WE NOW EXPECT INIT WINDOW TO BE CALLED SHORTLY BEFORE BEGINING GLUT LOOP, OTHERWISE WE HAVE ISSUES AS DELTA TIME IS SPIKED HIGH INITIALLY.
-    prevTime = std::chrono::high_resolution_clock::now();
 }
 
 void opengl_interface::render() {
     //deltatime
     std::chrono::nanoseconds deltaTime = std::chrono::high_resolution_clock::now() - prevTime;
+    if (prevTime == std::chrono::system_clock::time_point{}) {
+        deltaTime = std::chrono::nanoseconds(1000000000);
+    }
     prevTime = std::chrono::high_resolution_clock::now();
 
     // --- CUDA PART ---
@@ -68,7 +68,7 @@ void opengl_interface::render() {
     cudaMemset(d_ptr, 0, SIM_WIDTH * SIM_HEIGHT * sizeof(uchar4)); //Clear buffer
 
     // Launch Kernel
-    kernel(d_ptr, SIM_WIDTH, SIM_HEIGHT, std::chrono::duration_cast<std::chrono::duration<float>>(deltaTime).count());
+    kernel(d_ptr, SIM_WIDTH, SIM_HEIGHT, std::chrono::duration_cast<std::chrono::duration<float>>(deltaTime/SIMFACTOR).count());
 
     cudaGraphicsUnmapResources(1, &cudaResource, nullptr);
 

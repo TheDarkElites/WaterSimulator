@@ -15,6 +15,9 @@ int main(int argc, char** argv) {
             if (std::rand() % 2 == 0) {
                 h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_WATER, 1, vector(x, y));
             }
+            if (x == 0 || y == 0 || x == SIM_WIDTH - 1 || y == SIM_HEIGHT - 1) {
+                h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_ROCK, 1, vector(x, y));
+            }
         }
     }
 
