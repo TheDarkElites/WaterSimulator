@@ -50,7 +50,7 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
                     }
                 }
                 if (h_particles[j].type == PTYPE_ROCK) {
-                    //Force = Force + gravityForce(p, h_particles[j], -5);
+                    Force = Force + gravityForce(p, h_particles[j], -5);
                 }
             }
             p.acc = Force * (1/p.mass);
@@ -60,27 +60,6 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     // update positions
     for (int i = 0; i < width * height; ++i) {
         particle &p = h_particles[i];
-
-        // if (p.pos.x < 0) {
-        //     p.pos.x = SIM_WIDTH/2;
-        //     p.vel.x = 0;
-        //     p.acc.x = 0;
-        // }
-        // if (p.pos.x > SIM_WIDTH - 1) {
-        //     p.pos.x = SIM_WIDTH/2;
-        //     p.vel.x = 0;
-        //     p.acc.x = 0;
-        // }
-        // if (p.pos.y < 0) {
-        //     p.pos.y = SIM_HEIGHT/2;
-        //     p.vel.y = 0;
-        //     p.acc.y = 0;
-        // }
-        // if (p.pos.y > SIM_HEIGHT - 1) {
-        //     p.pos.y = SIM_HEIGHT/2;
-        //     p.vel.y = 0;
-        //     p.acc.y = 0;
-        // }
 
         p.vel = p.vel + p.acc * deltaTime;
 
