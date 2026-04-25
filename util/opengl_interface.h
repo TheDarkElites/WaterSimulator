@@ -11,7 +11,9 @@
 #define WINDOW_HEIGHT 2160
 
 #define SIM_WIDTH 480
-#define SIM_HEIGHT 270
+#define SIM_HEIGHT 360
+
+#define SIMFACTOR 4
 
 class opengl_interface {
 public:

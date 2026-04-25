@@ -11,7 +11,7 @@ typedef struct vector {
 } vector_t;
 
 typedef enum {
-    PTYPE_AIR, /* vacuum particle */
+    PTYPE_NULL, /* vacuum particle */
     PTYPE_WATER, /* fluid particle */
     PTYPE_ROCK /* solid particle */
 } ptype_t;
