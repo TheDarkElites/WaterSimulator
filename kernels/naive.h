@@ -6,6 +6,13 @@
 
 #include "../include/particle.h"
 
+/* number of bins per dimension */
+#define NUM_BINS 160
+/* number of particles per bin 8 */
+#define PARTICLES_PER_BIN (SIM_WIDTH * SIM_HEIGHT / (NUM_BINS * NUM_BINS))
+#define BIN_WIDTH (SIM_WIDTH / NUM_BINS)
+#define BIN_HEIGHT (SIM_HEIGHT / NUM_BINS)
+
 #define RC 2
 #define WALL_RANGE 10
 #define MINABS(A,B) abs(A) < abs(B) ? (A) : (B)
@@ -23,6 +30,8 @@ void setupKernel(particle* h_particles);
 void endKernel();
 
 inline particle* d_particles;
+inline particle** d_bins;
+inline int* d_bin_counts;
 inline ulong step = 0;
 
 #endif //WATERSIMULATOR_NAIVE_H

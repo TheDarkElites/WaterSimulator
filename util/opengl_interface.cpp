@@ -62,15 +62,22 @@ void opengl_interface::render() {
     // --- CUDA PART ---
     uchar4* d_ptr;
     size_t num_bytes;
+    cudaError_t err;
 
-    cudaGraphicsMapResources(1, &cudaResource, 0);
-    cudaGraphicsResourceGetMappedPointer((void**)&d_ptr, &num_bytes, cudaResource);
+    err = cudaGraphicsMapResources(1, &cudaResource, 0);
+    if (err != cudaSuccess) printf("Graphics Map Resource Error: %s\n", cudaGetErrorString(err));
+    err = cudaGraphicsResourceGetMappedPointer((void**)&d_ptr, &num_bytes, cudaResource);
+    if (err != cudaSuccess) {
+        printf("Mapped Pointer Resource Error: %s\n", cudaGetErrorString(err));
+        throw std::runtime_error("Mapped Pointer Resource Error Could Not Be Allocated!");
+    }
 
     cudaMemset(d_ptr, 0, SIM_WIDTH * SIM_HEIGHT * sizeof(uchar4)); //Clear buffer
 
     // Launch Kernel
     kernel(d_ptr, SIM_WIDTH, SIM_HEIGHT, std::chrono::duration_cast<std::chrono::duration<float>>(deltaTime/SIMFACTOR).count());
 
+    cudaDeviceSynchronize();
     cudaGraphicsUnmapResources(1, &cudaResource, nullptr);
 
     // --- OPENGL PART ---
