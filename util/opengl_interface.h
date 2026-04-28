@@ -10,8 +10,8 @@
 #define WINDOW_WIDTH 3840
 #define WINDOW_HEIGHT 2160
 
-#define SIM_WIDTH 480
-#define SIM_HEIGHT 360
+#define SIM_WIDTH 480 / 2
+#define SIM_HEIGHT 360 / 2
 
 #define SIMFACTOR 4
 
