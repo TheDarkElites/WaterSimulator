@@ -13,6 +13,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(CheckLanguage)
 check_language(CUDA)
 
+set(CMAKE_CUDA_ARCHITECTURES native)
+
 add_executable(WaterSimulator main.cpp util/ogldev_util.cpp
         include/particle.hpp
         util/opengl_interface.cpp

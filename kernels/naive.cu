@@ -106,39 +106,79 @@ __device__ vector_t compute_net_force(const particle& i, const particle& j, floa
     ));
 }
 
-//Kernel Mains
-__global__ void computeForces(int width, int height, particle* particles, float dt, ulong step) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    int idy = threadIdx.y + blockIdx.y * blockDim.y;
-
-    particle& p = particles[idx + idy * width];
-    if (p.type != PTYPE_WATER) return;
-
-    vector_t Force = vector_t(0, 0, 0);
-    //vector_t WallForce = vector_t(0, 0, 0);
-    curandState cstate;
-
-    for (int i = 0; i < width * height; i++) {
-        vector_t r = sub_vectors(p.pos,particles[i].pos);
-        if (vector_norm(r) < RC) {
-            if (particles[i].type == PTYPE_WATER) {
-                curand_init((idx + idy * width) * i, step, 0, &cstate);
-                Force = add_vectors(Force,compute_net_force(p, particles[i], curand_normal(&cstate), dt));
-            }
-        }
-        if (particles[i].type == PTYPE_ROCK && vector_norm(r) < WALL_RANGE) {
-            Force = add_vectors(Force, gravityForce(p, particles[i], wall_grav));
-        }
-    }
-    //Force = add_vectors(Force, min_vector(Force, WallForce));
-    p.acc = scale_vector(1/p.mass, Force);
+__device__ size_t position_to_bin_index(const vector_t& pos) {
+    size_t binX = static_cast<size_t>(floor(pos.x / BIN_WIDTH));
+    size_t binY = static_cast<size_t>(floor(pos.y / BIN_HEIGHT));
+    return (binX * NUM_BINS + binY) * PARTICLES_PER_BIN;
 }
 
-__global__ void integrateForces(uchar4* d_ptr, int width, int height, particle* particles, float deltaTime) {
+//Kernel Mains
+__global__ void computeForces(particle** bins, const int* binCounts, float dt, ulong step) {
+    const unsigned int binCountIdx = blockIdx.x * NUM_BINS + blockIdx.y;
+    const int currentBinCount = binCounts[binCountIdx];
+    const unsigned int binBaseIdx = binCountIdx * PARTICLES_PER_BIN;
+    const unsigned int binOffset = threadIdx.x;
+
+    // TODO - LOAD EVERYTHING FROM BINNED INTO SHARED MEM ???
+    //const particle* currentBin = //bins[binBaseIdx];
+    //particle p = currentBin[binOffset];
+    if (binOffset >= currentBinCount) return;
+
+    const particle p = *bins[binBaseIdx + binOffset];
+
+    if (p.type != PTYPE_WATER) return;
+
+    vector_t Force(0, 0, 0);
+    curandState cstate;
+
+    for (int i = 0; i < currentBinCount; i++) {
+        const particle neighbor = *bins[binBaseIdx + i]; //currentBin[i];
+        const vector_t r = sub_vectors(p.pos,neighbor.pos);
+        if (vector_norm(r) < RC) {
+            if (neighbor.type == PTYPE_WATER) {
+                curand_init(binOffset * i, step, 0, &cstate);
+                Force = add_vectors(Force,compute_net_force(p, neighbor, curand_normal(&cstate), dt));
+            }
+        }
+        if (neighbor.type == PTYPE_ROCK && vector_norm(r) < WALL_RANGE) {
+            Force = add_vectors(Force, gravityForce(p, neighbor, wall_grav));
+        }
+    }
+    bins[binBaseIdx + binOffset]->acc = scale_vector(1/p.mass, Force);
+}
+
+__device__ void rebinParticles(int width, int height, particle* particles, particle** bins, int* bin_counts) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     int idy = threadIdx.y + blockIdx.y * blockDim.y;
 
+    if (idx >= width || idy >= height) return;
+
     particle& p = particles[idx + idy * width];
+
+    const size_t binBaseIdx = position_to_bin_index(p.pos);
+    const int ticketNumber = atomicAdd(&bin_counts[binBaseIdx / PARTICLES_PER_BIN], 1);
+
+    /* TODO - ADD OVERFLOW BIN */
+    if (ticketNumber >= PARTICLES_PER_BIN) {
+        /* TOO BAD SO SAD. Your particle doesn't get binned */
+        bin_counts[binBaseIdx / PARTICLES_PER_BIN] = PARTICLES_PER_BIN; // reset the count back to the cap
+        return;
+    }
+
+    bins[binBaseIdx + ticketNumber] = &particles[idx + idy * width];
+}
+
+__global__ void initialRebin(int width, int height, particle_t* particles, particle_t** bins, int* bin_counts) { //
+    rebinParticles(width, height, particles, bins, bin_counts);
+}
+
+__global__ void integrateForces(uchar4* d_ptr, int width, int height, particle_t* particles, particle_t** bins, int* binCounts, float deltaTime) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    int idy = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if (idx >= width || idy >= height) return;
+
+    particle_t& p = particles[idx + idy * width];
     if (p.type == PTYPE_NULL) return;
 
     p.vel = add_vectors(p.vel, scale_vector(deltaTime, p.acc));
@@ -150,24 +190,45 @@ __global__ void integrateForces(uchar4* d_ptr, int width, int height, particle* 
     if (static_cast<int>(roundf(p.pos.y)) >= height) p.pos.y = p.pos.y - static_cast<float>(height);
     if (static_cast<int>(roundf(p.pos.y)) < 0) p.pos.y = p.pos.y + static_cast<float>(height);
 
+    if (static_cast<int>(roundf(p.pos.x)) >= width || static_cast<int>(roundf(p.pos.x)) < 0 || static_cast<int>(roundf(p.pos.y)) >= height || static_cast<int>(roundf(p.pos.y)) < 0)  {
+        printf("Particle Panic!\n");
+        p.pos.x = SIM_WIDTH / 2;
+        p.pos.y = SIM_HEIGHT / 2;
+        p.vel = vector_t();
+    }
+
+    rebinParticles(width, height, particles, bins, binCounts);
+
     d_ptr[static_cast<int>(roundf(p.pos.x)) + static_cast<int>(roundf(p.pos.y)) * width] = ucharFromParticle(p);
 }
 
 //Host Utility
 
+static inline void resetBinCounts() {
+    cudaError_t err;
+    err = cudaMemset(d_bin_counts, 0, NUM_BINS * NUM_BINS * sizeof(int));
+    if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+    cudaMemset(d_bins, 0, sizeof(particle*) * NUM_BINS * NUM_BINS * PARTICLES_PER_BIN);
+}
+
 void launchGeneratePixelsNaive(uchar4* d_ptr, int width, int height, float deltaTime) {
-    dim3 blockSize(16, 16);
-    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
+    dim3 blockSize(PARTICLES_PER_BIN);
+    dim3 gridSize(NUM_BINS, NUM_BINS);
 
     cudaError_t err;
 
-    computeForces<<<gridSize, blockSize>>>(width, height, d_particles, deltaTime, step);
+    computeForces<<<gridSize, blockSize>>>(d_bins, d_bin_counts, deltaTime, step);
     err = cudaGetLastError();
-    if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+    if (err != cudaSuccess) printf("Error Compute Forces: %s\n", cudaGetErrorString(err));
 
-    integrateForces<<<gridSize, blockSize>>>(d_ptr, width, height, d_particles, deltaTime);
+    resetBinCounts();
+
+    blockSize = dim3(16, 16);
+    gridSize = dim3((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
+
+    integrateForces<<<gridSize, blockSize>>>(d_ptr, width, height, d_particles, d_bins, d_bin_counts, deltaTime);
     err = cudaGetLastError();
-    if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+    if (err != cudaSuccess) printf("Error Integrate Forces: %s\n", cudaGetErrorString(err));
 
     printf("FPS: %f\n", 1 / (deltaTime * SIMFACTOR));
     step++;
@@ -180,6 +241,30 @@ void setupKernel(particle* h_particles) {
     err = cudaMalloc(&d_particles, size);
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
     err = cudaMemcpy(d_particles, h_particles, size, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+
+    err = cudaMalloc(&d_bins, NUM_BINS * NUM_BINS * PARTICLES_PER_BIN * sizeof(particle_t*));
+    if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+
+    err = cudaMalloc(&d_bin_counts, NUM_BINS * NUM_BINS * sizeof(int));
+    if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+    cudaMemset(d_bins, 0, sizeof(particle*) * NUM_BINS * NUM_BINS * PARTICLES_PER_BIN);
+
+
+    dim3 blockSize(PARTICLES_PER_BIN);
+    dim3 gridSize(NUM_BINS, NUM_BINS);
+
+    blockSize = dim3(16, 16);
+    gridSize = dim3((SIM_WIDTH + blockSize.x - 1) / blockSize.x, (SIM_HEIGHT + blockSize.y - 1) / blockSize.y);
+
+    resetBinCounts();
+    initialRebin<<<gridSize, blockSize>>>(SIM_WIDTH, SIM_HEIGHT, d_particles, d_bins, d_bin_counts);
+
+    // int* counts_test = (int*) malloc(NUM_BINS * NUM_BINS * sizeof(int));
+    // cudaMemcpy(counts_test, d_bin_counts, NUM_BINS * NUM_BINS * sizeof(int), cudaMemcpyDeviceToHost);
+    // int t = 0;
+
+    err = cudaGetLastError();
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
 }
 
