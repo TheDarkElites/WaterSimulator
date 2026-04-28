@@ -7,9 +7,11 @@
 #include "../include/particle.h"
 
 #define RC 2
+#define WALL_RANGE 10
+#define MINABS(A,B) abs(A) < abs(B) ? (A) : (B)
 //Conservative Force Constant
 constexpr float a = 25;
-constexpr float wall_grav = -99999;
+constexpr float wall_grav = -9999;
 
 constexpr float epsilon = 1e-6;
 constexpr float kT = 1;

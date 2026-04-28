@@ -35,6 +35,10 @@ __device__ vector_t normalize(const vector_t v) {
     return scale_vector(1/vector_norm(v), v);
 }
 
+__device__ vector_t min_vector(const vector_t minv, const vector_t target) {
+    return vector_t(MINABS(minv.x,target.x),MINABS(minv.y,target.y),MINABS(minv.z,target.z));
+}
+
 // Physics Forces
 
 /* Conservative Force */
@@ -111,6 +115,7 @@ __global__ void computeForces(int width, int height, particle* particles, float 
     if (p.type != PTYPE_WATER) return;
 
     vector_t Force = vector_t(0, 0, 0);
+    //vector_t WallForce = vector_t(0, 0, 0);
     curandState cstate;
 
     for (int i = 0; i < width * height; i++) {
@@ -121,10 +126,11 @@ __global__ void computeForces(int width, int height, particle* particles, float 
                 Force = add_vectors(Force,compute_net_force(p, particles[i], curand_normal(&cstate), dt));
             }
         }
-        if (particles[i].type == PTYPE_ROCK) {
+        if (particles[i].type == PTYPE_ROCK && vector_norm(r) < WALL_RANGE) {
             Force = add_vectors(Force, gravityForce(p, particles[i], wall_grav));
         }
     }
+    //Force = add_vectors(Force, min_vector(Force, WallForce));
     p.acc = scale_vector(1/p.mass, Force);
 }
 
@@ -138,7 +144,11 @@ __global__ void integrateForces(uchar4* d_ptr, int width, int height, particle* 
     p.vel = add_vectors(p.vel, scale_vector(deltaTime, p.acc));
     p.pos = add_vectors(p.pos, scale_vector(deltaTime, p.vel));
 
-    if (static_cast<int>(roundf(p.pos.x)) >= width || static_cast<int>(roundf(p.pos.x)) < 0 || static_cast<int>(roundf(p.pos.y)) >= height || static_cast<int>(roundf(p.pos.y)) < 0) return;
+    //if (static_cast<int>(roundf(p.pos.x)) >= width || static_cast<int>(roundf(p.pos.x)) < 0 || static_cast<int>(roundf(p.pos.y)) >= height || static_cast<int>(roundf(p.pos.y)) < 0) return;
+    if (static_cast<int>(roundf(p.pos.x)) >= width) p.pos.x = p.pos.x - static_cast<float>(width);
+    if (static_cast<int>(roundf(p.pos.x)) < 0) p.pos.x = p.pos.x + static_cast<float>(width);
+    if (static_cast<int>(roundf(p.pos.y)) >= height) p.pos.y = p.pos.y - static_cast<float>(height);
+    if (static_cast<int>(roundf(p.pos.y)) < 0) p.pos.y = p.pos.y + static_cast<float>(height);
 
     d_ptr[static_cast<int>(roundf(p.pos.x)) + static_cast<int>(roundf(p.pos.y)) * width] = ucharFromParticle(p);
 }
