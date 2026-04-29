@@ -13,7 +13,7 @@
 #define SIM_WIDTH 3840
 #define SIM_HEIGHT 2160
 
-#define SIMFACTOR 1
+#define SIMFACTOR 4
 
 class opengl_interface {
 public:
@@ -28,5 +28,7 @@ private:
     static cudaGraphicsResource_t cudaResource;
     static void render();
 };
+
+inline size_t particleBufferSize;
 
 #endif //WATERSIMULATOR_OPENGL_INTERFACE_H
