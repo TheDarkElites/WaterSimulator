@@ -2,97 +2,6 @@
 
 #include <random>
 
-#include "../util/opengl_interface.h"
-
-// Utility
-__device__ uchar4 ucharFromParticle(const particle& p) {
-    return make_uchar4(p.type == PTYPE_WATER ? 0 : 114, p.type == PTYPE_WATER ? 63 : 114, p.type == PTYPE_WATER ? 205 : 114, 255);
-}
-
-// Vector API
-
-__device__ vector_t add_vectors(const vector_t v1, const vector_t v2) {
-    return vector_t(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
-}
-
-__device__ vector_t scale_vector(const float c, const vector_t v) {
-    return vector_t(c*v.x, c*v.y, c*v.z);
-}
-
-__device__ vector_t sub_vectors(const vector_t v1, const vector_t v2) {
-    return add_vectors(v1, scale_vector(-1, v2));
-}
-
-__device__ float dot_product(const vector_t v1, const vector_t v2) {
-    return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
-}
-
-__device__ float vector_norm(const vector_t v) {
-    return sqrt(dot_product(v, v));
-}
-
-__device__ vector_t normalize(const vector_t v) {
-    return scale_vector(1/vector_norm(v), v);
-}
-
-// Physics Forces
-
-/* Conservative Force */
-__device__ float weight_c(float r) {
-    return 1- (r/RC);
-}
-
-__device__ vector_t compute_force_c(const particle_t& i, const particle_t& j) {
-    vector_t r_ij = sub_vectors(i.pos, j.pos);
-    float r = vector_norm(r_ij);
-    if (r < epsilon) return vector_t(0, 0, 0);
-    float w_C = weight_c(r);
-    vector_t r_hat = normalize(r_ij); // same as unit vec e
-    return scale_vector(i.type == PTYPE_WATER && j.type == PTYPE_WATER ? a : a_rock_water * w_C, r_hat);
-}
-
-/* Dissipative Force */
-__device__ float weight_d(float r) {
-    return (1- (r/RC)) * (1- (r/RC));
-}
-
-__device__ vector_t compute_force_d(const particle_t& i, const particle_t& j) {
-    float gamma = 4.5; // hard coded for water
-    vector_t r_ij = sub_vectors(i.pos, j.pos);
-    vector_t v_ij = sub_vectors(i.vel, j.vel);
-    float r = vector_norm(r_ij);
-    if (r < epsilon) return vector_t(0, 0, 0);
-    float w_D = weight_d(r);
-    vector_t r_hat = normalize(r_ij); // same as unit vec e
-    return scale_vector(-gamma * w_D * dot_product(v_ij, r_hat), r_hat);
-}
-
-/* Random Force */
-
-__device__ float weight_r(float r) {
-    return 1- (r/RC);
-}
-
-__device__ vector_t compute_force_r(const particle_t& i, const particle_t& j, float theta, float dt) {
-    float sigma = sqrt(2*4.5*kT); // hard code for water sqrt(2*gamma*kT)
-    vector_t r_ij = sub_vectors(i.pos, j.pos);
-    float r = vector_norm(r_ij);
-    if (r < epsilon) return vector_t(0, 0, 0);
-    float w_R = weight_r(r);
-    vector_t r_hat = normalize(r_ij); // same as unit vec e
-    return scale_vector(sigma * w_R * (theta/sqrt(dt)), r_hat);
-}
-
-/* final force */
-
-__device__ vector_t compute_net_force(const particle& i, const particle& j, float theta, float dt) {
-    return add_vectors(
-        compute_force_c(i, j), add_vectors(
-        compute_force_d(i, j),
-        compute_force_r(i, j, theta, dt)
-    ));
-}
-
 __device__ size_t position_to_bin_index(const vector_t& pos) {
     size_t binX = static_cast<size_t>(floor(pos.x / BIN_WIDTH));
     size_t binY = static_cast<size_t>(floor(pos.y / BIN_HEIGHT));
@@ -198,7 +107,7 @@ static inline void resetBinCounts() {
     cudaMemset(d_bins, 0, sizeof(particle*) * NUM_BINS * NUM_BINS * PARTICLES_PER_BIN);
 }
 
-void launchGeneratePixelsOptimized(uchar4* d_ptr, int width, int height, float deltaTime) {
+void launchGeneratePixelsOptimized(uchar4* d_ptr, float deltaTime) {
     dim3 blockSize(PARTICLES_PER_BIN);
     dim3 gridSize(NUM_BINS, NUM_BINS);
 
@@ -221,7 +130,7 @@ void launchGeneratePixelsOptimized(uchar4* d_ptr, int width, int height, float d
     step++;
 }
 
-void setupKernel(particle* h_particles) {
+void setupKernelOptimized(particle* h_particles) {
     cudaError_t err;
     err = cudaMalloc(&d_particles,  particleBufferSize * sizeof(particle));
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
@@ -245,7 +154,7 @@ void setupKernel(particle* h_particles) {
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
 }
 
-void endKernel() {
+void endKernelOPtimized() {
     cudaError_t err;
     err = cudaFree(d_particles);
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));

@@ -1,36 +1,42 @@
 #include "cpuloadkernel.h"
-#include <chrono>
-#include <cmath>
-#include <cstdio>
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 
-__global__ void generatePixels(uchar4* d_ptr, int width, int height, particle* particles) {
+__global__ void generatePixels(uchar4* d_ptr, particle* particles) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x >= width || y >= height) return;
+    if (x >= SIM_WIDTH || y >= SIM_HEIGHT) return;
 
-    int index = y * width + x;
+    int index = y * SIM_WIDTH + x;
 
-    particle ourparticle = particles[index];
+    particle p = particles[index];
 
-    if (static_cast<int>(roundf(ourparticle.pos.x)) >= width || static_cast<int>(roundf(ourparticle.pos.x)) < 0 || static_cast<int>(roundf(ourparticle.pos.y)) >= height || static_cast<int>(roundf(ourparticle.pos.y)) < 0) return;
+    if (static_cast<int>(roundf(p.pos.x)) >= SIM_WIDTH) p.pos.x = p.pos.x - static_cast<float>(SIM_WIDTH);
+    if (static_cast<int>(roundf(p.pos.x)) < 0) p.pos.x = p.pos.x + static_cast<float>(SIM_WIDTH);
+    if (static_cast<int>(roundf(p.pos.y)) >= SIM_HEIGHT) p.pos.y = p.pos.y - static_cast<float>(SIM_HEIGHT);
+    if (static_cast<int>(roundf(p.pos.y)) < 0) p.pos.y = p.pos.y + static_cast<float>(SIM_HEIGHT);
 
-    unsigned char r = ourparticle.type == PTYPE_WATER ? 0 : 114;
-    unsigned char g = ourparticle.type == PTYPE_WATER ? 63 : 114;
-    unsigned char b = ourparticle.type == PTYPE_WATER ? 205 : 114;
+    if (static_cast<int>(roundf(p.pos.x)) >= SIM_WIDTH || static_cast<int>(roundf(p.pos.x)) < 0 || static_cast<int>(roundf(p.pos.y)) >= SIM_HEIGHT || static_cast<int>(roundf(p.pos.y)) < 0)  {
+        printf("Particle Panic!\n");
+        p.pos.x = SIM_WIDTH / 2;
+        p.pos.y = SIM_HEIGHT / 2;
+        p.vel.x = 0;
+        p.vel.y = 0;
+    }
 
-    d_ptr[static_cast<int>(roundf(ourparticle.pos.x)) + static_cast<int>(roundf(ourparticle.pos.y)) * width] = make_uchar4(r, g, b, 255);
+    unsigned char r = p.type == PTYPE_WATER ? 0 : 114;
+    unsigned char g = p.type == PTYPE_WATER ? 63 : 114;
+    unsigned char b = p.type == PTYPE_WATER ? 205 : 114;
+
+    d_ptr[static_cast<int>(roundf(p.pos.x)) + static_cast<int>(roundf(p.pos.y)) * SIM_WIDTH] = make_uchar4(r, g, b, 255);
 }
 
-void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float deltaTime) {
+void launchGeneratePixelsCPULOAD(uchar4* d_ptr, float deltaTime) {
     dim3 blockSize(16, 16);
-    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y);
+    dim3 gridSize((SIM_WIDTH + blockSize.x - 1) / blockSize.x, (SIM_HEIGHT + blockSize.y - 1) / blockSize.y);
 
     //Realistically you will want any operations that change the particles array to occur here (or be called from here) - G.O
     //compute forces
-    for (int i = 0; i < width * height; ++i) {
+    for (int i = 0; i < particleBufferSize; ++i) {
         particle &p = h_particles[i];
         if (p.type == PTYPE_WATER) {
 
@@ -38,34 +44,32 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float del
     }
 
     // update positions
-    bool printed = false;
-    for (int i = 0; i < width * height; ++i) {
+    for (int i = 0; i < particleBufferSize; ++i) {
         particle &p = h_particles[i];
         p.vel = p.vel + p.acc * deltaTime;
         p.pos = p.pos + p.vel * deltaTime;
-
-        // if (p.type == PTYPE_WATER && !printed) {
-        //     printf("(%f, %f) | %f | %f | Deltatime: %f \n",p.pos.x, p.pos.y, p.vel.y, p.acc.y, deltaTime);
-        //     printed = true;
-        // }
     }
 
     cudaError_t err;
 
     particle *d_particles;
-    size_t size = sizeof(particle) * width * height;
+    size_t size = sizeof(particle) * particleBufferSize;
 
     err = cudaMalloc(&d_particles, size);
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
     err = cudaMemcpy(d_particles, h_particles, size, cudaMemcpyHostToDevice);
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
 
-    generatePixels<<<gridSize, blockSize>>>(d_ptr, width, height, d_particles);
+    generatePixels<<<gridSize, blockSize>>>(d_ptr, d_particles);
 
     err = cudaGetLastError();
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
 
     err = cudaFree(d_particles);
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+}
+
+void setupKernelCPU(particle* new_h_particles) {
+    h_particles = new_h_particles;
 }
 
