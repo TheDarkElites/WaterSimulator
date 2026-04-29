@@ -1,14 +1,7 @@
 #ifndef WATERSIMULATOR_PARTICLE_H
 #define WATERSIMULATOR_PARTICLE_H
 
-#endif //WATERSIMULATOR_PARTICLE_H
-
-typedef struct vector {
-    float x; /* vector i-hat component */
-    float y; /* vector j-hat component */
-    /* including this for future 3d implementation */
-    float z; /* vector k-hat component */
-} vector_t;
+#include "vector.h"
 
 typedef enum {
     PTYPE_NULL, /* vacuum particle */
@@ -23,3 +16,5 @@ typedef struct particle {
     vector_t  vel; /* particle velocity vector */
     vector_t acc; /* particle acceleration vector */
 } particle_t;
+
+#endif //WATERSIMULATOR_PARTICLE_H

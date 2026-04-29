@@ -23,7 +23,7 @@ public:
     static std::chrono::time_point<std::chrono::system_clock> prevTime;
 
     static void initWindow(int &argc, char **argv);
-    static void (*kernel)(uchar4*, int, int, float);
+    static void (*kernel)(uchar4*, float);
 private:
     static cudaGraphicsResource_t cudaResource;
     static void render();

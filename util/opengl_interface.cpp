@@ -9,7 +9,7 @@ GLuint opengl_interface::pboID = 0;
 GLuint opengl_interface::textureID = 0;
 std::chrono::time_point<std::chrono::system_clock> opengl_interface::prevTime;
 cudaGraphicsResource_t opengl_interface::cudaResource;
-void (*opengl_interface::kernel)(uchar4*, int, int, float) = nullptr;
+void (*opengl_interface::kernel)(uchar4*, float) = nullptr;
 
 void opengl_interface::initWindow(int &argc, char **argv) {
     //Init GLUT
@@ -75,7 +75,7 @@ void opengl_interface::render() {
     cudaMemset(d_ptr, 0, SIM_WIDTH * SIM_HEIGHT * sizeof(uchar4)); //Clear buffer
 
     // Launch Kernel
-    kernel(d_ptr, SIM_WIDTH, SIM_HEIGHT, std::chrono::duration_cast<std::chrono::duration<float>>(deltaTime/SIMFACTOR).count());
+    kernel(d_ptr, std::chrono::duration_cast<std::chrono::duration<float>>(deltaTime/SIMFACTOR).count());
 
     cudaDeviceSynchronize();
     cudaGraphicsUnmapResources(1, &cudaResource, nullptr);

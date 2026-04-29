@@ -7,8 +7,15 @@
 
 #include <cuda_runtime.h>
 #include "../include/particle.hpp"
+#include <chrono>
+#include <cmath>
+#include <cstdio>
+#include <device_launch_parameters.h>
+#include "../util/opengl_interface.h"
 
-void launchGeneratePixelsCPULOAD(uchar4* d_ptr, int width, int height, float time);
+void launchGeneratePixelsCPULOAD(uchar4* d_ptr, float time);
+
+void setupKernelCPU(particle* h_particles);
 
 inline particle* h_particles;
 

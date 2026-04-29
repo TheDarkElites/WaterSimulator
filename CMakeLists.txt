@@ -15,7 +15,8 @@ check_language(CUDA)
 
 set(CMAKE_CUDA_ARCHITECTURES native)
 
-add_executable(WaterSimulator main.cpp util/ogldev_util.cpp
+add_executable(WaterSimulator main.cpp
+        util/ogldev_util.cpp
         include/particle.hpp
         util/opengl_interface.cpp
         util/opengl_interface.h
@@ -23,9 +24,16 @@ add_executable(WaterSimulator main.cpp util/ogldev_util.cpp
         kernels/testkernel.cu
         kernels/cpuloadkernel.cu
         kernels/cpuloadkernel.h
-        physics.cpp
+        kernels/naive.cu
         kernels/naive.h
-        kernels/naive.cu)
+        kernels/optimized.cu
+        kernels/optimized.h
+        include/vector.h
+        util/physics.cu
+        util/physics.h
+        util/vector_tools.cu
+        util/vector_tools.h
+)
 
 target_include_directories(WaterSimulator PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 
