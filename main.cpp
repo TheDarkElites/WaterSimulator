@@ -2,27 +2,43 @@
 #include "util/opengl_interface.h"
 #include "kernels/naive.h"
 
+#define WALL_WIDTH 50
+#define WALL_DENSITY 0.125
+#define WATER_PERCENTAGE 0.05
+
 int main(int argc, char** argv) {
 
     opengl_interface::initWindow(argc, argv);
     opengl_interface::kernel = launchGeneratePixelsNaive;
 
-    //init table of particles for constant image
-    particle* h_particles = static_cast<particle*>(malloc(sizeof(particle) * SIM_WIDTH * SIM_HEIGHT));
+    std::vector<particle> WaterParticles;
+    std::vector<particle> StoneParticles;
 
-    for (int x = 0; x < SIM_WIDTH; x++) {
-        for (int y = 0; y < SIM_HEIGHT; y++) {
-            if (x == 0 || y == 0 || x == SIM_WIDTH - 1 || y == SIM_HEIGHT - 1) {
-                //h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_ROCK, 1, vector(x, y));
-            }
-            else if (std::rand() % 100 == 0) {
-                h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_WATER, 1, vector(x, y));
-            }
-            else {
-                h_particles[x + (y * SIM_WIDTH)] = particle(PTYPE_NULL, 0, vector());
-            }
+    //init table of particles for constant image
+
+    //Setup particle start
+
+    for (double x = 0; x < SIM_WIDTH; x+=WALL_DENSITY) {
+        for (double y = 0; y < SIM_HEIGHT; y+=WALL_DENSITY) {
+            if ( ((x >= SIM_WIDTH / 4 && x <= SIM_WIDTH / 4 + WALL_WIDTH) || (x >= 3 * SIM_WIDTH / 4 && x <= 3 * SIM_WIDTH / 4 + WALL_WIDTH)) && (y >= SIM_HEIGHT / 4 && y <= 3 * SIM_HEIGHT / 4 + WALL_WIDTH) ||
+             ((y >= SIM_HEIGHT / 4 && y <= SIM_HEIGHT / 4 + WALL_WIDTH) || (y >= 3 * SIM_HEIGHT / 4 && y <= 3 * SIM_HEIGHT / 4 + WALL_WIDTH)) && (x >= SIM_WIDTH / 4 && x <= 3 * SIM_WIDTH / 4 + WALL_WIDTH) ) {
+                        StoneParticles.emplace_back(PTYPE_ROCK, 1, vector_t(x, y));
+             }
         }
     }
+
+    for (int i = 0; i < SIM_WIDTH * SIM_HEIGHT * WATER_PERCENTAGE; i++) {
+        WaterParticles.emplace_back(PTYPE_WATER, 1, vector(SIM_WIDTH/2 + (std::rand() % 4 - 2), SIM_HEIGHT/2 + (std::rand() % 4 - 2)));
+    }
+
+    //Init particle table
+
+    particleBufferSize = (WaterParticles.size() + StoneParticles.size());
+    particle* h_particles = static_cast<particle*>(malloc(particleBufferSize * sizeof(particle)));
+    memcpy(h_particles, WaterParticles.data(), WaterParticles.size() * sizeof(particle));
+    memcpy(h_particles + WaterParticles.size(), StoneParticles.data(), StoneParticles.size() * sizeof(particle));
+
+    //Setup kernel
 
     setupKernel(h_particles);
 
