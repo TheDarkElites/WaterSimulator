@@ -16,7 +16,7 @@
 #define BIN_WIDTH (SIM_WIDTH / NUM_BINS)
 #define BIN_HEIGHT (SIM_HEIGHT / NUM_BINS)
 
-#define BLOCKSIZE 256 * 2
+#define BLOCKSIZE PARTICLES_PER_BIN
 
 void launchGeneratePixelsOptimized(uchar4* d_ptr, float time);
 

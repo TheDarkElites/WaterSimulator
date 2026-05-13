@@ -1,11 +1,13 @@
+#include <cstring>
 #include <iostream>
 #include "util/opengl_interface.h"
 #include "kernels/optimized.h"
 
 #define WALL_WIDTH 50
 #define WALL_DENSITY 0.125
-#define WATER_PERCENTAGE 0.01
+#define WATER_PERCENTAGE 0.10
 
+#ifdef WATERSIMULATOR_PARTICLE_H
 void makeWall(vector_t posA, vector_t posB, std::vector<particle>& StoneParticles) {
     int iteration = 0;
     for (double y = posA.y; y < posB.y; y+=WALL_DENSITY) {
@@ -17,6 +19,7 @@ void makeWall(vector_t posA, vector_t posB, std::vector<particle>& StoneParticle
         iteration++;
     }
 }
+#endif
 
 int main(int argc, char** argv) {
 
@@ -30,7 +33,7 @@ int main(int argc, char** argv) {
 
     //Setup particle start
 
-    //makeWall(vector((SIM_WIDTH * 3) / 7, (SIM_HEIGHT* 3) / 7), vector(((SIM_WIDTH * 3) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH - 300), StoneParticles);
+    //makeWall(vector((SIM_WIDTH * 2) / 7, (SIM_HEIGHT* 2) / 7), vector(((SIM_WIDTH * 2) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 5) / 7) + WALL_WIDTH), StoneParticles);
     //makeWall(vector((SIM_WIDTH * 3) / 7, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH - 200), vector(((SIM_WIDTH * 3) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH), StoneParticles);
 
     //makeWall(vector((SIM_WIDTH * 4) / 7, (SIM_HEIGHT* 3) / 7), vector(((SIM_WIDTH * 4) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH), StoneParticles);

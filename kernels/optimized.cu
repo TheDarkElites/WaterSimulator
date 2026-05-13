@@ -54,8 +54,7 @@ __device__ void rebinParticles(size_t particleBufferSize, particle* particles, p
 
     const size_t binBaseIdx = position_to_bin_index(p.pos);
     const int ticketNumber = atomicAdd(&bin_counts[binBaseIdx / PARTICLES_PER_BIN], 1);
-
-    /* TODO - ADD OVERFLOW BIN */
+    
     if (ticketNumber >= PARTICLES_PER_BIN) {
         /* TOO BAD SO SAD. Your particle doesn't get binned */
         bin_counts[binBaseIdx / PARTICLES_PER_BIN] = PARTICLES_PER_BIN; // reset the count back to the cap
