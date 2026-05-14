@@ -1,3 +1,4 @@
+#include <cstring>
 #include <iostream>
 #include "util/opengl_interface.h"
 #include "kernels/cpuloadkernel.h"
@@ -32,7 +33,7 @@ int main(int argc, char** argv) {
 
     //Setup particle start
 
-    //makeWall(vector((SIM_WIDTH * 3) / 7, (SIM_HEIGHT* 3) / 7), vector(((SIM_WIDTH * 3) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH - 300), StoneParticles);
+    //makeWall(vector((SIM_WIDTH * 2) / 7, (SIM_HEIGHT* 2) / 7), vector(((SIM_WIDTH * 2) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 5) / 7) + WALL_WIDTH), StoneParticles);
     //makeWall(vector((SIM_WIDTH * 3) / 7, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH - 200), vector(((SIM_WIDTH * 3) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH), StoneParticles);
 
     //makeWall(vector((SIM_WIDTH * 4) / 7, (SIM_HEIGHT* 3) / 7), vector(((SIM_WIDTH * 4) / 7) + WALL_WIDTH, ((SIM_HEIGHT* 4) / 7) + WALL_WIDTH), StoneParticles);
