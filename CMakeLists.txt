@@ -32,8 +32,12 @@ add_executable(WaterSimulator main.cpp
         util/physics.h
         util/vector_tools.cu
         util/vector_tools.h
-        util/dpd.cpp
+        kernels/overflow.cu
+        kernels/overflow.h
+        kernels/debugkernel.cu
+        kernels/debugkernel.h
         util/dpd.h
+        util/dpd.cpp
 )
 
 target_include_directories(WaterSimulator PRIVATE ${CUDAToolkit_INCLUDE_DIRS})

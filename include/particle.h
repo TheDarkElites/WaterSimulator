@@ -2,6 +2,7 @@
 #define WATERSIMULATOR_PARTICLE_H
 
 #include "vector.h"
+//#define DEBUG
 
 typedef enum {
     PTYPE_NULL, /* vacuum particle */
@@ -15,6 +16,10 @@ typedef struct particle {
     vector_t pos; /* particle position vector */
     vector_t  vel; /* particle velocity vector */
     vector_t acc; /* particle acceleration vector */
+    bool binned; /* tracks whether the particle got placed inside a bin - only used in overflow kernel */
+#ifdef DEBUG
+    bool dirty; /*trackes whether or not the particle was modified*/
+#endif
 } particle_t;
 
 #endif //WATERSIMULATOR_PARTICLE_H
