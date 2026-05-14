@@ -1,11 +1,13 @@
 #include <iostream>
 #include "util/opengl_interface.h"
-#include "kernels/optimized.h"
+#include "kernels/cpuloadkernel.h"
+#include "string.h"
 
 #define WALL_WIDTH 50
 #define WALL_DENSITY 0.125
-#define WATER_PERCENTAGE 0.01
+#define WATER_PERCENTAGE 0.20
 
+#ifndef WATERSIMULATOR_CPULOADKERNEL_H
 void makeWall(vector_t posA, vector_t posB, std::vector<particle>& StoneParticles) {
     int iteration = 0;
     for (double y = posA.y; y < posB.y; y+=WALL_DENSITY) {
@@ -17,11 +19,11 @@ void makeWall(vector_t posA, vector_t posB, std::vector<particle>& StoneParticle
         iteration++;
     }
 }
+#endif
 
 int main(int argc, char** argv) {
-
     opengl_interface::initWindow(argc, argv);
-    opengl_interface::kernel = launchGeneratePixelsOptimized;
+    opengl_interface::kernel = launchGeneratePixelsCPULOAD;
 
     std::vector<particle> WaterParticles;
     std::vector<particle> StoneParticles;
@@ -51,7 +53,7 @@ int main(int argc, char** argv) {
 
     //Setup kernel
 
-    setupKernelOptimized(new_h_particles);
+    setupKernelCPU(new_h_particles);
 
     //UPDATING PARTICLES SHOULD BE DONE IN kernels/cpuloadkernel.cu IN THE HOST FUNCTION - G.O
 

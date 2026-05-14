@@ -10,8 +10,8 @@
 #define WINDOW_WIDTH 3840
 #define WINDOW_HEIGHT 2160
 
-#define SIM_WIDTH 3840
-#define SIM_HEIGHT 2160
+#define SIM_WIDTH 3840 / 60
+#define SIM_HEIGHT 2160 / 60
 
 #define SIMFACTOR 4
 
@@ -30,5 +30,6 @@ private:
 };
 
 inline size_t particleBufferSize;
+inline float avgFPS;
 
 #endif //WATERSIMULATOR_OPENGL_INTERFACE_H

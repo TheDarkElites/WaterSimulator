@@ -1,5 +1,5 @@
-#ifndef WATERSIMULATOR_OPTIMIZED_H
-#define WATERSIMULATOR_OPTIMIZED_H
+#ifndef WATERSIMULATOR_OVERFLOW_H
+#define WATERSIMULATOR_OVERFLOW_H
 
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
@@ -18,15 +18,15 @@
 
 #define BLOCKSIZE PARTICLES_PER_BIN
 
-void launchGeneratePixelsOptimized(uchar4* d_ptr, float time);
+void launchGeneratePixelsOverflow(uchar4* d_ptr, float time);
 
-void setupKernelOptimized(particle* h_particles);
+void setupKernelOverflow(particle* h_particles);
 
-void endKernelOptimized();
+void endKernelOverflow();
 
 inline particle* d_particles;
 inline particle** d_bins;
 inline int* d_bin_counts;
 inline ulong step = 0;
 
-#endif //WATERSIMULATOR_OPTIMIZED_H
+#endif //WATERSIMULATOR_OVERFLOW_H

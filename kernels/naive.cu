@@ -66,7 +66,6 @@ void launchGeneratePixelsNaive(uchar4* d_ptr, float deltaTime) {
     err = cudaGetLastError();
     if (err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
 
-    printf("FPS: %f\n", 1 / (deltaTime * SIMFACTOR));
     step++;
 }
 

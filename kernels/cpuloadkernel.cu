@@ -39,7 +39,7 @@ void launchGeneratePixelsCPULOAD(uchar4* d_ptr, float deltaTime) {
     for (int i = 0; i < particleBufferSize; ++i) {
         particle &p = h_particles[i];
         if (p.type == PTYPE_WATER) {
-
+            
         }
     }
 

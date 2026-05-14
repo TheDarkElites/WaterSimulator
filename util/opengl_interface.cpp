@@ -100,4 +100,8 @@ void opengl_interface::render() {
     glDisable(GL_TEXTURE_2D);
 
     glutSwapBuffers();
+    //FPS
+    const float FPS = 1/std::chrono::duration_cast<std::chrono::duration<float>>(deltaTime).count();
+    avgFPS = (avgFPS + FPS) / 2;
+    printf("FPS: %f\nAverage FPS: %f\n", FPS, avgFPS);
 }
